@@ -169,12 +169,14 @@ static ssize_t open_board_write(struct file *filp, char *buf, size_t count, loff
     if(count < MAXSIZE) {
         copy_from_user(d_buf, buf, count);
         d_buf[count-1] = 0;
+	LCDClear();
 	LCDWriteString(d_buf);
         *f_pos += count;
         return count;
         } else {
         copy_from_user(d_buf, buf, MAXSIZE - 1);
         d_buf[MAXSIZE - 1] = 0;
+	LCDClear();
 	LCDWriteString(d_buf);
         *f_pos += MAXSIZE - 1;
         return MAXSIZE - 1;
