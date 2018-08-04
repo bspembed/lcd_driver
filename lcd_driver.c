@@ -154,7 +154,7 @@ static struct file_operations dev_fops =
 	.release        	= open_board_close,
 	.unlocked_ioctl		= open_board_ioctl,
 	.read           	= open_board_read,
-	.write				= open_board_write,
+	.write			= open_board_write,
 };
 
 static struct miscdevice misc = 
@@ -167,10 +167,8 @@ static struct miscdevice misc =
 static int __init dev_init(void)
 {
 	int ret;
-
 	ret = misc_register(&misc);
-	PRINT(KERN_INFO DEVICE_NAME"\tINIT\n");
-  		
+	PRINT(KERN_INFO DEVICE_NAME"\tINIT\n");	
 	lcdinit();
 	LCDDisplayInitializing();
 	return ret;
@@ -198,9 +196,9 @@ static void gpio_set_val(unsigned int arg, int val)
 
 static void  LCDEnable(void)
 {
-    gpio_set_val(75, SET);
+	gpio_set_val(75, SET);
 	udelay(50);
-    gpio_set_val(75, CLEAR);
+	gpio_set_val(75, CLEAR);
 }
 	
 void LCDWriteCommand(LCDubyte LCDData)
@@ -257,7 +255,7 @@ void LCDDisplayInitializing(void)
 }
 static void  LCDWriteByte(LCDubyte  LCDData)
 {
-    unsigned char x;
+    	unsigned char x;
 
 	x = (LCDData & 0xF0) >> 4;
 	if (x & 0x01)
