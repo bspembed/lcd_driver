@@ -1,9 +1,4 @@
-/* driver.c
- *
- * open board led driver
- *
- * Copyright (c) 
- */
+/* lcd_driver.c */
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -18,34 +13,21 @@
 #include <linux/cdev.h>
 #include <linux/delay.h>
 #include <asm/uaccess.h>
-#include "../../header_file/gpio_table.h"
-#include "../../header_file/ioctl_magic.h"
+#include "gpio_table.h"
+#include "ioctl_magic.h"
 
+#define DEVICE_NAME "new_lcd"
 
-#define DEVICE_NAME "my_lcd"
+#define SET_ONE		1
+#define CLEAR_ZERO	0
+#define MAX_SIZE	17
 
-//#define DEG
-#ifdef DEG
-#define deg(fmt, args...) printk(fmt, ## args)
-#else
-#define deg(fmt, args...)
-#endif
+#define LCD_Clear() LCDWriteCommand(0x01)	
+#define LCD_Row1()  LCDWriteCommand(0x80)	
+#define LCD_Row2()  LCDWriteCommand(0xC0)   	
 
-//DEFINE MACROS 
-#define SET	1
-#define CLEAR	0
-#define MAXSIZE	17
-
-
-#define LCDClear() LCDWriteCommand(0x01)	  /* Clear display LCD */
-#define LCDRow1()  LCDWriteCommand(0x80)	  /* Begin at Line 1 */
-#define LCDRow2()  LCDWriteCommand(0xC0)   /* Begin at Line 2 */
-
-//#define Delay(x)   usleep(x*1000)
-//USERDEFINE DATA TYPES
 typedef unsigned char LCDubyte; 
 
-//DEFINE PROTOTYPES
 static void  LCDEnable(void);
 void LCDWriteCommand(LCDubyte command);
 void LCDWriteData(LCDubyte ascii);
@@ -62,19 +44,15 @@ static void gpio_set_val(unsigned int arg, int val);
 
 static char d_buf[MAXSIZE];
 
-/**************** This is used for opening the gpio_node ********************/
-
 int open_board_open (struct inode *inode, struct file *file)
 {
-	deg(KERN_INFO"Gpio_module opened\n");
+	PRINT(KERN_INFO"GPIO OPEN\n");
 	return 0;
 }
 
-/****************** This is used for closing the gpio_node *****************/
-
 int open_board_close (struct inode *inode, struct file *file)
 {
-	deg(KERN_INFO"Gpio_module closed\n");
+	PRINT(KERN_INFO"GPIO CLOSE\n");
 	return 0;
 }
 
@@ -82,14 +60,9 @@ irqreturn_t gpio_irq_handler(int irq, void *dev)
 {
 	int device = (int)dev;
 
-	deg("module is in irq handler irq\tdevice =%d\n",device);
 	value[device]^=1;
-	deg("i am in irq value is %d\t and device = %d\n\
-		",value[device],device);
 	return IRQ_HANDLED;
 }
-
-/******* IOCTL is used for setting the direction of gpio ******************/
 
 long open_board_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 {
@@ -102,49 +75,41 @@ long open_board_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	{
 	case IOCTL_GPIO_TO_IRQ:
 		if (gpio_to_irq(arg))
-			deg("gpio_to_irq for gpio_pin = %lu failed\n",arg);
+			PRINT("GPIO IRQ = %lu FAIL\n",arg);
 		else
-			deg("gpio_to_irq for gpio_pin = %lu successful\n",arg);
+			PRINT("GPIO IRQ = %lu SUCCESS\n",arg);
 		break;
 	case IOCTL_GPIO_REQ:
-		if(gpio_request(arg, "Gpio Driver"))
-			deg(KERN_WARNING "Gpio_driver: unable to request \
-				GPIO %lu\n",arg);
+		if(gpio_request(arg, "GPIO DRIVER"))
+			PRINT(KERN_WARNING "GPIO FAILED %lu\n",arg);
 		else
-			deg("gpio request cmd = %d\t arg = %lu\n"\
-				,IOCTL_GPIO_REQ,arg);
+			PRINT("GPIO CMD = %d\t ARG = %lu\n",IOCTL_GPIO_REQ,arg);
 		break;
 	case IOCTL_DIR_IN:
 			gpio_direction_input(gpio_table[arg]);
-			deg("gpio direction as input cmd = %d\t arg \
-				= %lu\n",IOCTL_DIR_IN,arg);
+			PRINT("GPIO DIRECTION = %d\t ARG = %lu\n",IOCTL_DIR_IN,arg);
 		break;
 	case IOCTL_REQUEST_IRQ:
-		if (request_irq(gpio_to_irq(arg),gpio_irq_handler,\
-			IRQ_TYPE_EDGE_RISING,"gpio irq handler",(void*)arg))
-			deg("gpio interrupt request failed\n");
+		if (request_irq(gpio_to_irq(arg),gpio_irq_handler, IRQ_TYPE_EDGE_RISING, "GPIO IEQ HANDLED", (void*)arg))
+			PRINT("GPIO IRQ FAILED\n");
 		else
-			deg("gpio interrupt request successful\n");
+			PRINT("GPIO IEQ SUCCESS\n");
 		break;       
 	case IOCTL_DIR_OUT:
 			gpio_direction_output(gpio_table[arg], 1);
-			deg("\ngpio direction as output cmd = %d\t arg \
-				= %lu\n",IOCTL_DIR_OUT,arg);
+			PRINT("\nGPIO DIRECTION = %d\t ARG = %lu\n", IOCTL_DIR_OUT,arg);
 		break;
 	case IOCTL_SET_GPIO:
-			deg("gpio set cmd = %d\t arg \
-				= %lu\n",IOCTL_SET_GPIO,arg);
+			PRINT("GPIO SET = %d\t ARG = %lu\n", IOCTL_SET_GPIO,arg);
 			gpio_set_value(gpio_table[arg], 1);
 		break;
 	case IOCTL_CLR_GPIO:
-			deg("gpio clr cmd = %d\t arg \
-				= %lu\n",IOCTL_CLR_GPIO,arg);
+			PRINT("GPIO CLEAR = %d\t ARG = %lu\n", IOCTL_CLR_GPIO,arg);
 			gpio_set_value(gpio_table[arg], 0);
 		break;
 	case IOCTL_FREE_GPIO:
 			gpio_free(arg);
-			deg("gpio free cmd = %d\t arg \
-				= %lu\n",IOCTL_FREE_GPIO,arg);
+			PRINT("GPIO FREE = %d\t ARG = %lu\n", IOCTL_FREE_GPIO,arg);
 		break;
 	case IOCTL_FREE_IRQ:
 			free_irq(gpio_to_irq(arg),(void*)arg);
@@ -155,10 +120,7 @@ long open_board_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 	return 0;	
 }
 
-/***************************** READ **********************************/
-
-ssize_t open_board_read(struct file *file, char __user *usr, 
-			size_t ret, loff_t *off)
+ssize_t open_board_read(struct file *file, char __user *usr, size_t ret, loff_t *off)
 {
 	ret=copy_to_user(usr, value, ret);
 	return ret;
@@ -166,35 +128,41 @@ ssize_t open_board_read(struct file *file, char __user *usr,
 
 static ssize_t open_board_write(struct file *filp, char *buf, size_t count, loff_t *f_pos)
 {
-    if(count < MAXSIZE) {
+    if(count < MAXSIZE) 
+	{
         copy_from_user(d_buf, buf, count);
         d_buf[count-1] = 0;
-	LCDClear();
-	LCDWriteString(d_buf);
+		LCDClear();
+		LCDWriteString(d_buf);
         *f_pos += count;
         return count;
-        } else {
+	}
+	else
+	{
         copy_from_user(d_buf, buf, MAXSIZE - 1);
         d_buf[MAXSIZE - 1] = 0;
-	LCDClear();
-	LCDWriteString(d_buf);
+		LCDClear();
+		LCDWriteString(d_buf);
         *f_pos += MAXSIZE - 1;
         return MAXSIZE - 1;
     }
 }
-static struct file_operations dev_fops = {
+
+static struct file_operations dev_fops = 
+{
 	.owner	        = THIS_MODULE,
 	.open           = open_board_open,
 	.release        = open_board_close,
 	.unlocked_ioctl	= open_board_ioctl,
 	.read           = open_board_read,
-	.write		= open_board_write,
+	.write			= open_board_write,
 };
 
-static struct miscdevice misc = {
-	.minor = MISC_DYNAMIC_MINOR,
-	.name = DEVICE_NAME,
-	.fops = &dev_fops,
+static struct miscdevice misc = 
+{
+	.minor 	= MISC_DYNAMIC_MINOR,
+	.name 	= DEVICE_NAME,
+	.fops 	= &dev_fops,
 };
 
 static int __init dev_init(void)
@@ -202,12 +170,10 @@ static int __init dev_init(void)
 	int ret;
 
 	ret = misc_register(&misc);
-	deg(KERN_INFO DEVICE_NAME"\tinitialized\n");
+	PRINT(KERN_INFO DEVICE_NAME"\tINIT\n");
   		
 	lcdinit();
 	LCDDisplayInitializing();
-
-
 	return ret;
 }
 
@@ -219,12 +185,10 @@ static void __exit dev_exit(void)
 static void gpio_req(unsigned int arg)
 {
 
-	if(gpio_request(arg, "Gpio Driver"))
-			deg(KERN_WARNING "Gpio_driver: unable to request \
-				GPIO %lu\n",arg);
+	if(gpio_request(arg, "Gpio DRIVER"))
+		PRINT(KERN_WARNING "GPIO REQUEST FAILED %lu\n", arg);
 	else
-			deg("gpio request cmd = %d\t arg = %lu\n"\
-				,IOCTL_GPIO_REQ,arg);
+		PRINT("GPIO REQUEST CMD = %d\t ARG = %lu\n", IOCTL_GPIO_REQ,arg);
 
 	gpio_direction_output(arg, 1);
 
@@ -237,20 +201,20 @@ static void gpio_set_val(unsigned int arg, int val)
 
 static void  LCDEnable(void)
 {
-    gpio_set_val(75,SET);
+    gpio_set_val(75, SET);
 	udelay(50);
-    gpio_set_val(75,CLEAR);
+    gpio_set_val(75, CLEAR);
 }
 	
 void LCDWriteCommand(LCDubyte LCDData)
 {
-	gpio_set_val(74,CLEAR); 
+	gpio_set_val(74, CLEAR); 
 	LCDWriteByte(LCDData);
  }
 
 void LCDWriteData(LCDubyte LCDData)
 {
-   	gpio_set_val(74,SET); 
+   	gpio_set_val(74, SET); 
 	LCDWriteByte(LCDData);
 }
 
