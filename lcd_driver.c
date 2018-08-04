@@ -59,7 +59,6 @@ int open_board_close (struct inode *inode, struct file *file)
 irqreturn_t gpio_irq_handler(int irq, void *dev) 
 {
 	int device = (int)dev;
-
 	value[device]^=1;
 	return IRQ_HANDLED;
 }
@@ -128,41 +127,41 @@ ssize_t open_board_read(struct file *file, char __user *usr, size_t ret, loff_t 
 
 static ssize_t open_board_write(struct file *filp, char *buf, size_t count, loff_t *f_pos)
 {
-    if(count < MAXSIZE) 
+	if(count < MAXSIZE) 
 	{
-        copy_from_user(d_buf, buf, count);
-        d_buf[count-1] = 0;
+		copy_from_user(d_buf, buf, count);
+		d_buf[count-1] = 0;
 		LCDClear();
 		LCDWriteString(d_buf);
-        *f_pos += count;
-        return count;
+		*f_pos += count;
+		return count;
 	}
 	else
 	{
-        copy_from_user(d_buf, buf, MAXSIZE - 1);
-        d_buf[MAXSIZE - 1] = 0;
+		copy_from_user(d_buf, buf, MAXSIZE - 1);
+		d_buf[MAXSIZE - 1] = 0;
 		LCDClear();
 		LCDWriteString(d_buf);
-        *f_pos += MAXSIZE - 1;
-        return MAXSIZE - 1;
-    }
+		*f_pos += MAXSIZE - 1;
+		return MAXSIZE - 1;
+	}
 }
 
 static struct file_operations dev_fops = 
 {
-	.owner	        = THIS_MODULE,
-	.open           = open_board_open,
-	.release        = open_board_close,
-	.unlocked_ioctl	= open_board_ioctl,
-	.read           = open_board_read,
-	.write			= open_board_write,
+	.owner	        	= THIS_MODULE,
+	.open           	= open_board_open,
+	.release        	= open_board_close,
+	.unlocked_ioctl		= open_board_ioctl,
+	.read           	= open_board_read,
+	.write				= open_board_write,
 };
 
 static struct miscdevice misc = 
 {
-	.minor 	= MISC_DYNAMIC_MINOR,
-	.name 	= DEVICE_NAME,
-	.fops 	= &dev_fops,
+	.minor 		= MISC_DYNAMIC_MINOR,
+	.name 		= DEVICE_NAME,
+	.fops 		= &dev_fops,
 };
 
 static int __init dev_init(void)
@@ -184,12 +183,10 @@ static void __exit dev_exit(void)
 
 static void gpio_req(unsigned int arg)
 {
-
 	if(gpio_request(arg, "Gpio DRIVER"))
 		PRINT(KERN_WARNING "GPIO REQUEST FAILED %lu\n", arg);
 	else
 		PRINT("GPIO REQUEST CMD = %d\t ARG = %lu\n", IOCTL_GPIO_REQ,arg);
-
 	gpio_direction_output(arg, 1);
 
 }
@@ -297,7 +294,6 @@ static void  LCDWriteByte(LCDubyte  LCDData)
 		gpio_set_val(73,SET);
   	else
 		gpio_set_val(73,CLEAR);
-
 	LCDEnable();
 	udelay(1000);
 }
