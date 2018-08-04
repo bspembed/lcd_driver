@@ -240,13 +240,12 @@ void lcdinit(void)
 	gpio_set_val(73,0);
 	gpio_set_val(74,0);
 	gpio_set_val(75,0);
-	
 	udelay(5000);
-    LCDReset();
-    LCDWriteCommand(0x28);
-    LCDWriteCommand(0x0C);
-    LCDWriteCommand(0x06);
-    LCDWriteCommand(0x01); 
+	LCDReset();
+	LCDWriteCommand(0x28);
+	LCDWriteCommand(0x0C);
+	LCDWriteCommand(0x06);
+	LCDWriteCommand(0x01); 
 }
 static void LCDReset(void)
 {
@@ -256,7 +255,6 @@ static void LCDReset(void)
 }
 void LCDDisplayInitializing(void)
 {
-	
 	LCDubyte i;
 	LCDWriteString("LCD Init: OK");
 }
